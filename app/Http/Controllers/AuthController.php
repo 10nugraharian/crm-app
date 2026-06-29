@@ -15,7 +15,9 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('user_id', $request->user_id)->first();
+        $user = User::where('user_id', $request->user_id)
+                    ->orWhere('email', $request->user_id)
+                    ->first();
 
         // Bypass for demo if admin123
         if (!$user && $request->user_id === 'admin123') {
