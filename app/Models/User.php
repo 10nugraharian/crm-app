@@ -22,6 +22,9 @@ class User extends Authenticatable
         'no_rekening',
         'nama_bank',
         'leader_id',
+        'username',
+        'gender',
+        'tanggal_lahir',
     ];
 
     protected $hidden = [

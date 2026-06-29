@@ -11,6 +11,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LayananController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\UserController;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 
@@ -21,6 +22,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    Route::apiResource('users', UserController::class);
+    Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
 
     Route::apiResource('leads', LeadController::class);
     Route::post('/leads/import', [LeadController::class, 'importCsv']);
@@ -39,4 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/spks/{id}/pdf', [ProjectController::class, 'downloadSpkPdf']);
 
     Route::get('/reports', [ReportController::class, 'index']);
+});
+Route::get('/debug-headers', function (Request $request) {
+    return response()->json($request->headers->all());
 });
