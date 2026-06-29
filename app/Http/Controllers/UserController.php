@@ -11,60 +11,74 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $users = User::with(['leader.leader'])->get()->map(function ($user) {
-            return [
-                'id' => $user->id,
-                'userId' => $user->user_id,
-                'namaLengkap' => $user->name,
-                'username' => $user->username ?? explode('@', $user->email)[0],
-                'email' => $user->email,
-                'role' => $user->role,
-                'gender' => $user->gender,
-                'tanggalLahir' => $user->tanggal_lahir,
-                'namaBank' => $user->nama_bank,
-                'noRekening' => $user->no_rekening,
-                'leader_id' => $user->leader_id,
-                'namaLeader' => $user->leader ? $user->leader->name : null,
-                'namaManager' => ($user->leader && $user->leader->leader) ? $user->leader->leader->name : null,
-            ];
-        });
+        try {
+            $users = User::with(['leader.leader'])->get()->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'userId' => $user->user_id,
+                    'namaLengkap' => $user->name,
+                    'username' => $user->username ?? explode('@', $user->email)[0],
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'gender' => $user->gender,
+                    'tanggalLahir' => $user->tanggal_lahir,
+                    'namaBank' => $user->nama_bank,
+                    'noRekening' => $user->no_rekening,
+                    'leader_id' => $user->leader_id,
+                    'namaLeader' => $user->leader ? $user->leader->name : null,
+                    'namaManager' => ($user->leader && $user->leader->leader) ? $user->leader->leader->name : null,
+                ];
+            });
 
-        return response()->json($users);
+            return response()->json($users, 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error getting users: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        }
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'namaLengkap' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username',
-            'password' => 'required|string|min:6',
-            'role' => 'required|string',
-            'gender' => 'nullable|in:Laki-laki,Perempuan',
-            'tanggalLahir' => 'nullable|date',
-            'namaBank' => 'nullable|string|max:255',
-            'noRekening' => 'nullable|string|max:255',
-        ]);
+        try {
+            $validated = $request->validate([
+                'namaLengkap' => 'required|string|max:255',
+                'username' => 'required|string|max:255|unique:users,username',
+                'password' => 'required|string|min:6',
+                'role' => 'required|string',
+                'gender' => 'nullable|in:Laki-laki,Perempuan',
+                'tanggalLahir' => 'nullable|date',
+                'namaBank' => 'nullable|string|max:255',
+                'noRekening' => 'nullable|string|max:255',
+            ]);
 
-        // Generate a random User ID (NIP) if not provided. In real world this might be sequential.
-        $userId = str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
+            // Generate a random User ID (NIP) if not provided. In real world this might be sequential.
+            $userId = str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
 
-        $user = User::create([
-            'name' => $validated['namaLengkap'],
-            'username' => $validated['username'],
-            'email' => $validated['username'] . '@esdea.com', // fallback email
-            'password' => Hash::make($validated['password']),
-            'user_id' => $userId,
-            'role' => $validated['role'],
-            'gender' => $validated['gender'] ?? null,
-            'tanggal_lahir' => $validated['tanggalLahir'] ?? null,
-            'nama_bank' => $validated['namaBank'] ?? null,
-            'no_rekening' => $validated['noRekening'] ?? null,
-        ]);
+            $user = User::create([
+                'name' => $validated['namaLengkap'],
+                'username' => $validated['username'],
+                'email' => $validated['username'] . '_' . time() . '@esdea.com', // fallback email with time to avoid collision
+                'password' => Hash::make($validated['password']),
+                'user_id' => $userId,
+                'role' => $validated['role'],
+                'gender' => $validated['gender'] ?? null,
+                'tanggal_lahir' => $validated['tanggalLahir'] ?? null,
+                'nama_bank' => $validated['namaBank'] ?? null,
+                'no_rekening' => $validated['noRekening'] ?? null,
+            ]);
 
-        return response()->json([
-            'message' => 'User created successfully',
-            'user' => $user
-        ], 201);
+            return response()->json([
+                'message' => 'User created successfully',
+                'user' => $user
+            ], 201, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error saving user: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        }
     }
 
     public function update(Request $request, $id)
@@ -94,7 +108,7 @@ class UserController extends Controller
         return response()->json([
             'message' => 'User updated successfully',
             'user' => $user
-        ]);
+        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     public function resetPassword($id)
@@ -105,6 +119,6 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Password reset successfully to esdea123'
-        ]);
+        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
 }
